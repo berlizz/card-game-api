@@ -1,10 +1,11 @@
+package player;
 
 public interface Player {
-
-	public void attack();
 	
 	public void playCard();
 	
 	public void drawCard();
+	
+	public void endTurn();
 	
 }
