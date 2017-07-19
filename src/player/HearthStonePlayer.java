@@ -14,13 +14,17 @@ public class HearthStonePlayer implements Player {
 	
 	private int hp;
 	private int mana;
+	private int totalMana;
+	
+	
 	private List<HearthStoneCard> hand;
 	private List<HearthStoneCard> minions;
 	private CardDeck<HearthStoneCard> deck;
 	
 	public HearthStonePlayer() {
 		this.hp = PLAYER_TOTAL_HP;
-		this.mana = 0;
+		this.mana = 1;
+		this.totalMana = 1;
 		this.hand = new LinkedList<>();
 		this.minions = new LinkedList<>();
 		this.deck = new HearthStoneCardDeck();
@@ -40,8 +44,16 @@ public class HearthStonePlayer implements Player {
 			int index = selectCard();
 			
 			try {
+				if(hand.get(index).getMana() > this.mana) {
+					System.out.println("마나가 부족함");
+					System.out.println();
+					return;
+				}
+				
+				this.mana -= hand.get(index).getMana();
 				minions.add(hand.get(index));
 				hand.remove(index);
+				
 				break;
 			} catch (IndexOutOfBoundsException e) {
 				System.out.println("카드 선택의 범위를 벗어남");
@@ -56,10 +68,18 @@ public class HearthStonePlayer implements Player {
 	
 	@Override
 	public void endTurn() {
-		
+		if(totalMana < 10) {
+			totalMana++;
+		}
 	}
 	
 	public void attackMinion(HearthStonePlayer opponent) {
+		if(minions.size() == 0 || opponent.getMinions().size() == 0) {
+			System.out.println("플레이어 또는 공격할 상대방의 하수인이 없음");
+			System.out.println();
+			return;
+		}
+		
 		showMyMinions();
 		showOpponentMinions(opponent);
 		
@@ -91,6 +111,12 @@ public class HearthStonePlayer implements Player {
 	}
 	
 	public void attackHero(HearthStonePlayer opponent) {
+		if(minions.size() == 0) {
+			System.out.println("공격할 하수인이 없음");
+			System.out.println();
+			return;
+		}
+		
 		showMyMinions();
 		
 		while(true) {
@@ -116,22 +142,22 @@ public class HearthStonePlayer implements Player {
 	
 	private void showMyMinions() {
 		int i=0;
-		System.out.println("나의 하수인들 =================================");
+		System.out.println("나의 하수인들 =====================================================");
 		for (Card card : minions) {
 			System.out.println(i++ + " " + card.toString());
 		}
-		System.out.println("==========================================");
+		System.out.println("==============================================================");
 		
 		System.out.println();
 	}
 	
 	private void showOpponentMinions(HearthStonePlayer opponent) {
 		int i = 0;
-		System.out.println("상대 하수인들 =================================");
+		System.out.println("상대 하수인들 =====================================================");
 		for (Card card : opponent.getMinions()) {
 			System.out.println(i++ + " " + card.toString());
 		}
-		System.out.println("==========================================");
+		System.out.println("==============================================================");
 		
 		System.out.println();
 	}
@@ -158,6 +184,7 @@ public class HearthStonePlayer implements Player {
 	}
 	
 
+	// 이하 getter, setter
 	public int getHp() {
 		return hp;
 	}
@@ -196,6 +223,14 @@ public class HearthStonePlayer implements Player {
 
 	public void setDeck(CardDeck<HearthStoneCard> deck) {
 		this.deck = deck;
+	}
+
+	public int getTotalMana() {
+		return totalMana;
+	}
+
+	public void setTotalMana(int totalMana) {
+		this.totalMana = totalMana;
 	}
 
 }

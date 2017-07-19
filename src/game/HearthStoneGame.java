@@ -1,6 +1,7 @@
 package game;
 import java.util.Scanner;
 
+import card.HearthStoneCard;
 import player.HearthStonePlayer;
 
 public class HearthStoneGame implements Game {
@@ -12,7 +13,6 @@ public class HearthStoneGame implements Game {
 	private int player_2_score;
 	
 	private boolean gameOver;
-	private boolean endTurn;
 	
 	private int command;
 	private static final int PLAY_CARD = 1;
@@ -28,7 +28,6 @@ public class HearthStoneGame implements Game {
 		this.player_2 = new HearthStonePlayer();
 		
 		this.gameOver = false;
-		this.endTurn = false;
 		
 		this.command = 0;
 	}
@@ -36,6 +35,7 @@ public class HearthStoneGame implements Game {
 
 	@Override
 	public void gameStart() {
+		System.out.println("============================ 하스스톤 게임을 시작합니다  ============================");
 		drawThreeCards(player_1, player_2);
 		Scanner scan = new Scanner(System.in);
 		
@@ -47,14 +47,14 @@ public class HearthStoneGame implements Game {
 			if(isGameOver()) {
 				break;
 			}
+
+			showSituation();
 			
 			if(turnPlayer.equals(player_1)) {
 				System.out.println("플레이어1의 차례입니다.");
 			} else {
 				System.out.println("플레이어2의 차례입니다.");
 			}
-			
-			drawCard(turnPlayer);
 			
 			System.out.println("1.카드내기   2.하수인 공격   3.영웅 공격   4.턴종료");
 			command = scan.nextInt();
@@ -70,6 +70,10 @@ public class HearthStoneGame implements Game {
 				attackHero(turnPlayer, opponent);
 				break;
 			case END_TURN :
+				drawCard(turnPlayer);
+				endTurn(turnPlayer);
+				turnPlayer.setMana(turnPlayer.getTotalMana());
+				
 				if(turnPlayer.equals(player_1)) {
 					turnPlayer = player_2;
 					opponent = player_1;
@@ -83,15 +87,37 @@ public class HearthStoneGame implements Game {
 			default :
 				System.out.println("1 2 3 4 중 하나 선택");
 			}
-			
-			
 		}
+		
+		if(player_1.getHp() < 1) {
+			System.out.println("플레이어1의 승리");
+		}
+		
+		System.out.println("플레이어2의 승리");
 	}
 
 	@Override
 	public void countScore() {
 		this.player_1_score = player_1.getHp();
 		this.player_2_score = player_2.getHp();
+	}
+	
+	private void showSituation() {
+		System.out.println();
+		System.out.println("상대 영웅 HP : " + opponent.getHp());
+		System.out.println("상대 하수인들 =====================================================");
+		for (HearthStoneCard card : opponent.getMinions()) {
+			System.out.println(card.toString());
+		}
+		System.out.println("==============================================================");
+		System.out.println();
+		System.out.println("나의 하수인들 =====================================================");
+		for (HearthStoneCard card : turnPlayer.getMinions()) {
+			System.out.println(card.toString());
+		}
+		System.out.println("==============================================================");
+		System.out.println("나의 영웅 HP : " + turnPlayer.getHp() + ", Mana : " + turnPlayer.getMana() + "/" + turnPlayer.getTotalMana());
+		System.out.println();
 	}
 	
 	private void playCard(HearthStonePlayer player) {
@@ -126,6 +152,10 @@ public class HearthStoneGame implements Game {
 		}
 		
 		return false;
+	}
+	
+	private void endTurn(HearthStonePlayer turnPlayer) {
+		turnPlayer.endTurn();
 	}
 
 }
