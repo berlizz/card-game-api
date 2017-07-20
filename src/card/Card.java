@@ -6,7 +6,6 @@ public interface Card {
 	
 	public void setHp(int hp);
 	
-	public int getMana();
+	public int getAttack();
 	
-	public void setMana(int hp);
 }

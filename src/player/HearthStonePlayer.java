@@ -12,14 +12,13 @@ public class HearthStonePlayer implements Player {
 	
 	private static final int PLAYER_TOTAL_HP = 30;
 	
-	private int hp;
-	private int mana;
-	private int totalMana;
+	private int hp;          // 플레이어 영웅의 체력
+	private int mana;        // 플레이어의 남은 마나
+	private int totalMana;   // 플레이어의 총 마나
 	
-	
-	private List<HearthStoneCard> hand;
-	private List<HearthStoneCard> minions;
-	private CardDeck<HearthStoneCard> deck;
+	private List<HearthStoneCard> hand;      // 덱에서 카드를 뽑아 보유한 리스트
+	private List<HearthStoneCard> minions;   // 내놓은 하수인들의 리스트
+	private CardDeck<HearthStoneCard> deck;  // 카드 덱
 	
 	public HearthStonePlayer() {
 		this.hp = PLAYER_TOTAL_HP;
@@ -37,6 +36,7 @@ public class HearthStonePlayer implements Player {
 	}
 
 	@Override
+	// 카드 한장을 내기
 	public void playCard() {
 		
 		while(true) {
@@ -44,39 +44,41 @@ public class HearthStonePlayer implements Player {
 			int index = selectCard();
 			
 			try {
-				if(hand.get(index).getMana() > this.mana) {
-					System.out.println("마나가 부족함");
-					System.out.println();
+				if(hand.get(index).getMana() > this.mana) {  // 마나가 부족하면 카드를 낼 수 없음
+					System.out.println("마나가 부족함\n");
 					return;
 				}
 				
-				this.mana -= hand.get(index).getMana();
+				this.mana -= hand.get(index).getMana();      // 카드를 내면 현재 마나를 줄이고, 하수인 리스트에 추가 및 보유카드에서 삭제
 				minions.add(hand.get(index));
 				hand.remove(index);
 				
 				break;
-			} catch (IndexOutOfBoundsException e) {
+			} catch (IndexOutOfBoundsException e) {          // 입력 숫자가 리스트의 범위를 벗어난 경우
 				System.out.println("카드 선택의 범위를 벗어남");
 			}
 		}
 	}
 
 	@Override
+	// 카드 한장을 뽑기
 	public void drawCard() {
 		hand.add(deck.getCard());
 	}
 	
 	@Override
+	// 턴 종료          마나회복, 하수인 공격가능 설정, 카드뽑기 
 	public void endTurn() {
-		if(totalMana < 10) {
-			totalMana++;
-		}
+		if(totalMana < 10) totalMana++;
+		this.mana = this.totalMana;
+		for (HearthStoneCard minion : this.minions) minion.setAttackAvailable(true);
+		drawCard();
 	}
 	
+	// 플레이어의 하수인으로 상대의 하수인 공격
 	public void attackMinion(HearthStonePlayer opponent) {
 		if(minions.size() == 0 || opponent.getMinions().size() == 0) {
-			System.out.println("플레이어 또는 공격할 상대방의 하수인이 없음");
-			System.out.println();
+			System.out.println("플레이어 또는 공격할 상대방의 하수인이 없음\n");
 			return;
 		}
 		
@@ -84,17 +86,22 @@ public class HearthStonePlayer implements Player {
 		showOpponentMinions(opponent);
 		
 		while(true) {
-			try {
+			try {  
 				int myMinionIndex = selectMyMinion();
-				int opponentMinionIndex = selectOpponentMinionIndex();
-				
 				HearthStoneCard myMinion = this.minions.get(myMinionIndex);
+				if(!myMinion.isAttackAvailable()) {                                  // 이번턴에 낸 카드와 한번 공격한 하수인은 공격 불가 
+					System.out.println("선택한 하수인은 공격할 수 없음");
+					return;
+				}
+				
+				int opponentMinionIndex = selectOpponentMinion();
 				HearthStoneCard opponentMinion = opponent.getMinions().get(opponentMinionIndex);
 				
-				myMinion.setHp(myMinion.getHp() - opponentMinion.getAttack());
+				myMinion.setHp(myMinion.getHp() - opponentMinion.getAttack());       // 공격에 관여된 하수인들의 체력을 줄임
 				opponentMinion.setHp(opponentMinion.getHp() - myMinion.getAttack());
 				
-				if(myMinion.getHp() < 1) {
+				myMinion.setAttackAvailable(false);    // 공격한 하수인은 공격 불가로 변경
+				if(myMinion.getHp() < 1) {             // 플레이어 또는 상대의 하수인 체력이 0이하가 될 시 하수인 리스트에서 삭제
 					minions.remove(myMinion);
 				}
 				
@@ -103,17 +110,17 @@ public class HearthStonePlayer implements Player {
 				}
 				
 				break;
-			} catch (IndexOutOfBoundsException e) {
+			} catch (IndexOutOfBoundsException e) {          // 입력 숫자가 리스트의 범위를 벗어난 경우
 				System.out.println("하수인 선택의 범위를 벗어남");
 			}
 		}
 		
 	}
 	
+	// 플레이어의 하수인으로 상대영웅을 공격
 	public void attackHero(HearthStonePlayer opponent) {
 		if(minions.size() == 0) {
-			System.out.println("공격할 하수인이 없음");
-			System.out.println();
+			System.out.println("공격할 하수인이 없음\n");
 			return;
 		}
 		
@@ -123,16 +130,22 @@ public class HearthStonePlayer implements Player {
 			try {
 				int myMinionIndex = selectMyMinion();
 				HearthStoneCard myMinion = this.minions.get(myMinionIndex);
+				if(!myMinion.isAttackAvailable()) {
+					System.out.println("선택한 하수인은 공격할 수 없음");
+					return;
+				}
 				
-				opponent.setHp(opponent.getHp() - myMinion.getAttack());
+				opponent.setHp(opponent.getHp() - myMinion.getAttack());      // 상대 영웅의 체력을 줄임
+				myMinion.setAttackAvailable(false);    // 공격한 하수인은 공격 불가로 변경
 				
 				break;
-			} catch (IndexOutOfBoundsException e) {
+			} catch (IndexOutOfBoundsException e) {          // 입력 숫자가 리스트의 범위를 벗어난 경우
 				System.out.println("하수인 선택의 범위를 벗어남");
 			}
 		}
 	}
 	
+	// 보유한 카드 리스트 출력
 	private void showHand() {
 		int i = 0;
 		for (Card card : hand) {
@@ -140,28 +153,35 @@ public class HearthStonePlayer implements Player {
 		}
 	}
 	
+	// 플레이어 하수인 출력
 	private void showMyMinions() {
 		int i=0;
-		System.out.println("나의 하수인들 =====================================================");
-		for (Card card : minions) {
-			System.out.println(i++ + " " + card.toString());
-		}
-		System.out.println("==============================================================");
+		StringBuilder sb = new StringBuilder();
+		sb.append("나의 하수인들 ======================================================\n");
 		
-		System.out.println();
+		for (HearthStoneCard hearthStoneCard : minions) {
+			sb.append(i++ + " " + hearthStoneCard.toString() + "\n");
+		}
+		
+		sb.append("===============================================================\n");
+		System.out.println(sb.toString());
 	}
 	
+	// 상대 하수인 출력
 	private void showOpponentMinions(HearthStonePlayer opponent) {
 		int i = 0;
-		System.out.println("상대 하수인들 =====================================================");
-		for (Card card : opponent.getMinions()) {
-			System.out.println(i++ + " " + card.toString());
-		}
-		System.out.println("==============================================================");
+		StringBuilder sb = new StringBuilder();
+		sb.append("상대 하수인들 ======================================================\n");
 		
-		System.out.println();
+		for (HearthStoneCard hearthStoneCard : opponent.getMinions()) {
+			sb.append(i++ + " " + hearthStoneCard.toString() + "\n");
+		}
+		
+		sb.append("===============================================================\n");
+		System.out.println(sb.toString());
 	}
 	
+	// 보유한 카드 리스트의 인덱스 입력
 	private int selectCard() {
 		Scanner scan = new Scanner(System.in);
 		System.out.print("카드 선택  ");
@@ -169,13 +189,15 @@ public class HearthStonePlayer implements Player {
 		return scan.nextInt();
 	}
 	
-	private int selectOpponentMinionIndex() {
+	// 상대 하수인 리스트의 인덱스 입력
+	private int selectOpponentMinion() {
 		Scanner scan = new Scanner(System.in);
 		System.out.print("공격할 상대의 하수인 선택  ");
 		
 		return scan.nextInt();
 	}
 
+	// 플레이어 하수인 리스트의 인덱스 입력
 	private int selectMyMinion() {
 		Scanner scan = new Scanner(System.in);
 		System.out.print("공격할 나의 하수인 선택  ");
